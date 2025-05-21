@@ -53,6 +53,7 @@ export default function SubmitPage() {
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+  const [isDuplicateChecking, setIsDuplicateChecking] = useState(false);
 
   // Initialize form
   const form = useForm<z.infer<typeof formSchema>>({
@@ -64,9 +65,35 @@ export default function SubmitPage() {
       category: '',
       tags: '',
       email: '',
-      honeypot: '', // initialize honeypot field
+      honeypot: '',
     },
   });
+
+  // Check for duplicates
+  const checkDuplicates = async (title: string, url: string) => {
+    try {
+      setIsDuplicateChecking(true);
+      const response = await fetch('/api/newsletter/check-duplicate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title, url }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to check for duplicates');
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error checking for duplicates:', error);
+      throw error;
+    } finally {
+      setIsDuplicateChecking(false);
+    }
+  };
 
   // Handle adding a tag
   const handleAddTag = () => {
@@ -99,15 +126,28 @@ export default function SubmitPage() {
     }
   };
 
-  // Handle form submission
+  // Handle form submission with duplicate checking
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setIsSubmitting(true);
       setSubmissionError(null);
-      
+
       // Add tags to the form values
       values.tags = tags.join(',');
-      
+
+      // Check for duplicates first
+      const duplicateCheck = await checkDuplicates(values.title, values.url);
+
+      if (duplicateCheck.exists) {
+        setSubmissionError(
+          duplicateCheck.type === 'approved'
+            ? 'This newsletter already exists in our directory.'
+            : 'This newsletter is already pending approval.'
+        );
+        return;
+      }
+
+      // Proceed with submission if no duplicates found
       const response = await fetch('/api/newsletter/submit', {
         method: 'POST',
         headers: {
@@ -115,12 +155,12 @@ export default function SubmitPage() {
         },
         body: JSON.stringify(values),
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to submit newsletter');
       }
-      
+
       setIsSuccess(true);
       form.reset();
       setTags([]);
@@ -472,13 +512,24 @@ export default function SubmitPage() {
                         </AnimatePresence>
                         
                         {/* Submit button */}
-                        <Button type="submit" className="w-full" disabled={isSubmitting}>
+                        <Button 
+                          type="submit" 
+                          className="w-full" 
+                          disabled={isSubmitting || isDuplicateChecking}
+                        >
                           {isSubmitting ? (
                             <>
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                               Submitting...
                             </>
-                          ) : "Submit Newsletter"}
+                          ) : isDuplicateChecking ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Checking...
+                            </>
+                          ) : (
+                            "Submit Newsletter"
+                          )}
                         </Button>
                       </form>
                     </Form>

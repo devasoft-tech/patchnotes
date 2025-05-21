@@ -1,45 +1,75 @@
 import { NextResponse } from 'next/server';
 import { submitNewsletter, NewsletterSubmission } from '@/lib/supabase';
 
-// Simple rate limiting with in-memory storage (for demo purposes)
-// In production, use Redis or a proper rate limiting solution
-const RATE_LIMIT = 5; // submissions per 10 minutes
-const RATE_WINDOW = 10 * 60 * 1000; // 10 minutes in milliseconds
+// Rate limiting configuration
+const RATE_LIMIT = 10; // submissions per hour
+const RATE_WINDOW = 60 * 60 * 1000; // 1 hour in milliseconds
 const ipSubmissions = new Map<string, { count: number; timestamp: number }>();
 
+interface RateLimitResult {
+  limited: boolean;
+  remainingTime: number;
+}
+
 // Helper function to check rate limit by IP
-function isRateLimited(ip: string): boolean {
+function isRateLimited(ip: string): RateLimitResult {
   const now = Date.now();
   const record = ipSubmissions.get(ip);
   
   // If no record or window expired, create new record
   if (!record || now - record.timestamp > RATE_WINDOW) {
     ipSubmissions.set(ip, { count: 1, timestamp: now });
-    return false;
+    return { limited: false, remainingTime: 0 };
   }
   
   // If within window but under limit, increment
   if (record.count < RATE_LIMIT) {
     record.count += 1;
-    return false;
+    return { limited: false, remainingTime: 0 };
   }
   
+  // Calculate remaining time in minutes
+  const remainingTime = Math.ceil((RATE_WINDOW - (now - record.timestamp)) / (60 * 1000));
+  
   // Rate limited
-  return true;
+  return { 
+    limited: true,
+    remainingTime
+  };
 }
+
+// Clean up old rate limit records periodically
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, record] of ipSubmissions.entries()) {
+    if (now - record.timestamp > RATE_WINDOW) {
+      ipSubmissions.delete(ip);
+    }
+  }
+}, RATE_WINDOW);
 
 // POST endpoint to submit a new newsletter
 export async function POST(request: Request) {
   try {
     // Get client IP for rate limiting
-    // In production, you would use proper headers like X-Forwarded-For
-    const ip = request.headers.get('x-forwarded-for') || 'unknown';
+    const ip = request.headers.get('x-forwarded-for') || 
+               request.headers.get('x-real-ip') ||
+               'unknown';
     
     // Check rate limit
-    if (isRateLimited(ip)) {
+    const rateLimitCheck = isRateLimited(ip);
+    if (rateLimitCheck.limited) {
       return NextResponse.json(
-        { error: 'Too many submissions. Please try again later.' },
-        { status: 429 }
+        { 
+          error: `Rate limit exceeded. Please try again in ${rateLimitCheck.remainingTime} minutes.`,
+          retryAfter: rateLimitCheck.remainingTime
+        },
+        { 
+          status: 429,
+          headers: {
+            'Retry-After': String(rateLimitCheck.remainingTime * 60)
+          }
+        }
       );
     }
     

@@ -36,7 +36,7 @@ export function Footer() {
             >
               Submit
             </Link>
-            <a
+            {/* <a
               href="https://twitter.com/patchnotes"
               target="_blank"
               rel="noreferrer"
@@ -53,7 +53,7 @@ export function Footer() {
             >
               <Github className="h-4 w-4" />
               <span className="sr-only">GitHub</span>
-            </a>
+            </a> */}
           </nav>
         </div>
       </div>

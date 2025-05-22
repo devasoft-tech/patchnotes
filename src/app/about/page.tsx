@@ -76,8 +76,8 @@ export default function AboutPage() {
                 <Mail className="h-5 w-5 mr-2 text-primary" />
                 <p>
                   <span className="font-medium block">Email</span>
-                  <a href="mailto:hello@patchnotes.dev" className="text-muted-foreground hover:text-primary transition-colors">
-                    hello@patchnotes.dev
+                  <a href="mailto:hello@patchnotes.email" className="text-muted-foreground hover:text-primary transition-colors">
+                    hello@patchnotes.email
                   </a>
                 </p>
               </div>
@@ -86,8 +86,8 @@ export default function AboutPage() {
                 <Globe className="h-5 w-5 mr-2 text-primary" />
                 <p>
                   <span className="font-medium block">Website</span>
-                  <a href="https://patchnotes.dev" className="text-muted-foreground hover:text-primary transition-colors">
-                    patchnotes.dev
+                  <a href="https://patchnotes.email" className="text-muted-foreground hover:text-primary transition-colors">
+                    patchnotes.email
                   </a>
                 </p>
               </div>

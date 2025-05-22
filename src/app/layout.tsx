@@ -44,14 +44,14 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://patchnotes.dev'),
+  metadataBase: new URL('https://patchnotes.email'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
     title: 'Best Tech Newsletters | PatchNotes - Developer Newsletter Discovery Platform',
     description: 'Find and subscribe to the best curated tech newsletters and developer email digests. Stay updated with top software engineering newsletters.',
-    url: 'https://patchnotes.dev',
+    url: 'https://patchnotes.email',
     siteName: 'PatchNotes',
     locale: 'en_US',
     type: 'website',
@@ -111,12 +111,12 @@ export default function RootLayout({
               "@type": "WebSite",
               name: "PatchNotes",
               description: "Discover the best tech newsletters and developer email digests. Curated collection of top software engineering newsletters.",
-              url: "https://patchnotes.dev",
+              url: "https://patchnotes.email",
               potentialAction: {
                 "@type": "SearchAction",
                 target: {
                   "@type": "EntryPoint",
-                  urlTemplate: "https://patchnotes.dev/search?q={search_term_string}"
+                  urlTemplate: "https://patchnotes.email/search?q={search_term_string}"
                 },
                 "query-input": "required name=search_term_string"
               }
